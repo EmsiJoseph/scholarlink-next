@@ -7,10 +7,19 @@ import {
   CardDescription,
   CardContent,
 } from "@/components/ui/card";
-import { buttonVariants } from "@/components/ui/button";
-import Link from "next/link";
+import { Button } from "@chakra-ui/react";
+import BeatLoader from "react-spinners/BeatLoader";
+import { useState } from "react";
 
 export function HomeForm() {
+  const [isLoading, setIsLoading] = useState(false);
+  const handleClick = () => {
+    setIsLoading(true);
+    // Simulate a network request
+    setTimeout(() => {
+      window.location.href = "/auth/login";
+    }, 2000); // Adjust the delay as needed
+  };
   return (
     <Card className="max-w-md w-full p-4">
       <CardHeader className="text-left gap-[32px]">
@@ -28,14 +37,16 @@ export function HomeForm() {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="grid gap-[14px]">
-          <Link
-            href="/auth/login"
-            className={buttonVariants({ variant: "default" })}
-          >
-            Sign in
-          </Link>
-        </div>
+        <Button
+          isLoading={isLoading}
+          spinner={<BeatLoader size={8} color="white" />}
+          width="full"
+          size="md"
+          colorScheme="blue"
+          onClick={handleClick}
+        >
+          Sign in
+        </Button>
       </CardContent>
     </Card>
   );

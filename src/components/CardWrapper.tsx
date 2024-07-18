@@ -7,22 +7,34 @@ import { ReactNode } from "react";
 
 import { Card, CardContent, CardDescription, CardFooter } from "./ui/card";
 
+import { useRouter } from "next/navigation";
+
 interface CardWrapperProps {
   children: React.ReactNode;
   headerTitle: string;
   headerDescription?: ReactNode;
-  backButtonLabel: string;
-  backButtonHref: string;
+  backButtonLabel?: string; // Provide a default value for backButtonLabel
+  backButtonHref?: string; // Provide a default value for backButtonHref
   showSocial?: boolean;
 }
 export function CardWrapper({
   children,
   headerTitle,
   headerDescription,
-  backButtonLabel,
-  backButtonHref,
+  backButtonLabel = "", // Set a default value for backButtonLabel
+  backButtonHref = "", // Set a default value for backButtonHref
   showSocial,
 }: CardWrapperProps) {
+  const router = useRouter();
+
+  const handleBackButtonClick = () => {
+    if (backButtonHref === "reload") {
+      router.back();
+    } else {
+      return;
+    }
+  };
+
   return (
     <Card className="max-w-md w-full p-2">
       <Header title={headerTitle} description={headerDescription} />
@@ -34,7 +46,11 @@ export function CardWrapper({
         </CardFooter>
       ) : null}
       <CardFooter className="justify-center">
-        <BackButton label={backButtonLabel} href={backButtonHref}></BackButton>
+        <BackButton
+          label={backButtonLabel}
+          href={backButtonHref}
+          onClick={handleBackButtonClick}
+        />
       </CardFooter>
     </Card>
   );

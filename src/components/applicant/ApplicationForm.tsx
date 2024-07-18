@@ -1,42 +1,101 @@
-import { ApplicationFormSchema, annualIncomeOptions } from "@/schemas";
+"use client";
+import {
+  ApplicationFormSchema,
+  annualIncomeOptions,
+  tracks,
+  allTracks,
+} from "@/schemas";
 import {
   FormLayout,
   PrevButton,
   NextButton,
   FormStepper,
   StepsCompleted,
-  FormValue,
   LoadingOverlay,
   LoadingSpinner,
   LoadingText,
-  PropertyList,
-  Property,
   SubmitButton,
 } from "@saas-ui/react";
 import { StepForm } from "@saas-ui/forms/zod";
-import { Text, ButtonGroup, Box, useBreakpointValue } from "@chakra-ui/react";
+import {
+  ButtonGroup,
+  Box,
+  useBreakpointValue,
+  Heading,
+} from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import {
   regions,
   provinces,
   cities,
   barangays,
+  Region,
 } from "select-philippines-address";
+import { useCurrentUser } from "@/hooks/use-current-user";
+import { yearOptions } from "@/data/school-year-data";
 
 export default function ApplicationForm() {
-  const [listRegions, setListRegions] = useState([]);
+  const [listRegions, setListRegions] = useState<Region[]>([]);
   const [listProvinces, setListProvinces] = useState([]);
   const [listCitiesMunicipalities, setListCitiesMunicipalities] = useState([]);
   const [listBarangays, setListBarangays] = useState([]);
+
   const [selectedRegion, setSelectedRegion] = useState("");
   const [selectedProvince, setSelectedProvince] = useState("");
   const [selectedCityMunicipality, setSelectedCityMunicipality] = useState("");
   const [selectedBarangay, setSelectedBarangay] = useState("");
 
+  const [selectedMotherAnnualIncome, setSelectedMotherAnnualIncome] =
+    useState("");
+  const [selectedSchoolYearGraduated, setSelectedSchoolYearGraduated] =
+    useState("");
+
+  const [selectedTrack, setSelectedTrack] = useState("");
+  const [selectedStrand, setSelectedStrand] = useState("");
+  const [filteredStrands, setFilteredStrands] = useState<{ value: string }[]>(
+    []
+  );
+
+  const [isStrandRequired, setIsStrandRequired] = useState(true);
+  console.log({
+    track: selectedTrack,
+    strand: selectedStrand,
+  });
+
+  const handleTrackChange = (value: string) => {
+    setSelectedTrack(value);
+    setSelectedStrand((prev) =>
+      value === "OTHER: SPECIFY" ? (prev = "NOT APPLICABLE") : (prev = "")
+    );
+    // @ts-ignore
+    if (tracks[value].length === 0) {
+      setIsStrandRequired(false);
+    } else {
+      setIsStrandRequired(true);
+    }
+
+    // @ts-ignore
+    setFilteredStrands(tracks[value] || []);
+  };
+
+  const handleStrandChange = (value: string) => {
+    setSelectedStrand((prev) => (prev = value));
+  };
+
+  useEffect(() => {
+    setSelectedStrand("");
+    setSelectedTrack("");
+    setFilteredStrands([]);
+  }, []);
+
   useEffect(() => {
     regions().then((region) => {
-      // @ts-ignore
-      setListRegions(region);
+      console.log("Regions fetched: ", region); // Log the fetched regions
+      if (Array.isArray(region)) {
+        setListRegions(region);
+      } else {
+        console.error("Expected an array for regions but got:", typeof region);
+      }
     });
   }, []);
 
@@ -49,6 +108,7 @@ export default function ApplicationForm() {
 
   useEffect(() => {
     if (selectedProvince) {
+      // @ts-ignore
       cities(selectedProvince).then((city) =>
         // @ts-ignore
         setListCitiesMunicipalities(city)
@@ -58,6 +118,7 @@ export default function ApplicationForm() {
 
   useEffect(() => {
     if (selectedCityMunicipality) {
+      // @ts-ignore
       barangays(selectedCityMunicipality).then((barangay) =>
         // @ts-ignore
         setListBarangays(barangay)
@@ -70,16 +131,8 @@ export default function ApplicationForm() {
     md: false,
   });
 
-  const handleRegionChangeNative = (e: any) => {
-    setSelectedRegion(e.target.value);
-    setSelectedProvince("");
-    setSelectedCityMunicipality("");
-    setSelectedBarangay("");
-    setListCitiesMunicipalities([]);
-    setListBarangays([]);
-  };
-
-  const handleRegionChange = (value: string) => {
+  const handleRegionChange = (value: any) => {
+    value = value.toUpperCase();
     setSelectedRegion(value);
     setSelectedProvince("");
     setSelectedCityMunicipality("");
@@ -88,15 +141,8 @@ export default function ApplicationForm() {
     setListBarangays([]);
   };
 
-  const handleProvinceChangeNative = (e: any) => {
-    setSelectedProvince(e.target.value);
-    setSelectedCityMunicipality("");
-    setSelectedBarangay("");
-    setListCitiesMunicipalities([]);
-    setListBarangays([]);
-  };
-
   const handleProvinceChange = (value: string) => {
+    value = value.toUpperCase();
     setSelectedProvince(value);
     setSelectedCityMunicipality("");
     setSelectedBarangay("");
@@ -104,23 +150,15 @@ export default function ApplicationForm() {
     setListBarangays([]);
   };
 
-  const handleCityMunicipalityChangeNative = (e: any) => {
-    setSelectedCityMunicipality(e.target.value);
-    setSelectedBarangay("");
-    setListBarangays([]);
-  };
-
   const handleCityMunicipalityChange = (value: string) => {
+    value = value.toUpperCase();
     setSelectedCityMunicipality(value);
     setSelectedBarangay("");
     setListBarangays([]);
   };
 
-  const handleBarangayChangeNative = (e: any) => {
-    setSelectedBarangay(e.target.value);
-  };
-
   const handleBarangayChange = (value: string) => {
+    value = value.toUpperCase();
     setSelectedBarangay(value);
   };
 
@@ -130,20 +168,16 @@ export default function ApplicationForm() {
       schema: ApplicationFormSchema[0].personal,
     },
     {
-      name: "contact",
-      schema: ApplicationFormSchema[1].contact,
-    },
-    {
       name: "address",
-      schema: ApplicationFormSchema[2].address,
+      schema: ApplicationFormSchema[1].address,
     },
     {
       name: "family",
-      schema: ApplicationFormSchema[3].family,
+      schema: ApplicationFormSchema[2].family,
     },
     {
       name: "education",
-      schema: ApplicationFormSchema[4].education,
+      schema: ApplicationFormSchema[3].education,
     },
   ];
 
@@ -169,10 +203,13 @@ export default function ApplicationForm() {
     md: "select",
   });
 
+  const user = useCurrentUser();
+
   return (
     <Box display="flex" flexDirection="column" alignItems="center">
       <Box width={["100%", "80%", "60%"]}>
         <StepForm
+          reValidateMode="onChange"
           shouldUseNativeValidation={shouldUseNativeValidation}
           steps={steps}
           defaultValues={{
@@ -181,6 +218,16 @@ export default function ApplicationForm() {
             firstName: "",
             dob: "",
             birthPlace: "",
+            gender: "",
+            email: user?.email || "",
+            mobileNum: "",
+            motherName: "",
+            shsSchoolYearGraduated: "",
+            strandName: "",
+            specifiedTrackStrand: "",
+            shsGwa: "",
+            shsSchoolName: "",
+            shsSchoolAddress: "",
           }}
           onSubmit={onSubmit}
         >
@@ -194,10 +241,17 @@ export default function ApplicationForm() {
                 backgroundColor="white"
               >
                 <FormStep name="personal" title="Personal">
+                  <Heading size="lg" mb="4">
+                    Personal information
+                  </Heading>
                   <FormLayout>
                     <FormLayout columns={[1, null, 3]}>
                       <Field
                         autoFocus
+                        style={{ textTransform: "uppercase" }}
+                        onChange={(e: any) => {
+                          e.target.value = e.target.value.toUpperCase();
+                        }}
                         isRequired
                         name="lastName"
                         label="Last name"
@@ -205,93 +259,142 @@ export default function ApplicationForm() {
                       />
                       <Field
                         isRequired
+                        style={{ textTransform: "uppercase" }}
+                        onChange={(e: any) => {
+                          e.target.value = e.target.value.toUpperCase();
+                        }}
                         name="firstName"
                         label="First name"
                         placeholder="Juan"
                       />
-                      <Field name="middleName" label="Middle name (optional)" />
+                      <Field
+                        style={{ textTransform: "uppercase" }}
+                        onChange={(e: any) => {
+                          e.target.value = e.target.value.toUpperCase();
+                        }}
+                        name="middleName"
+                        label="Middle name (optional)"
+                      />
+                      <Field
+                        isRequired
+                        name="sex"
+                        options={[
+                          { value: "MALE" },
+                          { value: "FEMALE" },
+                          { value: "OTHER" },
+                        ]}
+                        type={select}
+                        label="Sex"
+                        placeholder="SELECT YOUR SEX"
+                      />
+                      <Field
+                        isRequired
+                        name="civilStatus"
+                        options={[
+                          { value: "SINGLE" },
+                          { value: "MARRIED" },
+                          { value: "WIDOWED" },
+                          { value: "SEPARATED" },
+                        ]}
+                        type={select}
+                        label="Civil status"
+                        placeholder="SELECT CIVIL STATUS"
+                      />
+                      <Field
+                        isRequired
+                        name="nationality"
+                        style={{ textTransform: "uppercase" }}
+                        onChange={(e: any) => {
+                          e.target.value = e.target.value.toUpperCase();
+                        }}
+                        label="Nationality"
+                        placeholder="ENTER YOUR NATIONALITY"
+                        help="EXAMPLE: FILIPINO"
+                      />
                     </FormLayout>
-                    <FormLayout columns={[1, null, 3]}>
+                    {/* @ts-ignore */}
+                    <FormLayout templateColumns={[[1], null, "auto 65%"]}>
                       <Field
                         isRequired
                         name="dob"
                         label="Date of Birth"
                         type="date"
                       />
-                      <Field isRequired name="birthPlace" label="Birthplace" />
                       <Field
+                        style={{ textTransform: "uppercase" }}
+                        onChange={(e: any) => {
+                          e.target.value = e.target.value.toUpperCase();
+                        }}
                         isRequired
-                        name="gender"
-                        options={[
-                          { value: "Male" },
-                          { value: "Female" },
-                          { value: "Other" },
-                        ]}
-                        type={select}
-                        label="Gender"
-                        placeholder="Select your gender"
+                        name="birthPlace"
+                        label="Birthplace"
                       />
                     </FormLayout>
-                    <NextButton />
-                  </FormLayout>
-                </FormStep>
-
-                <FormStep name="contact" title="Contact">
-                  {/* @ts-ignore */}
-                  <FormLayout templateColumns={[[1], null, "auto 25%"]}>
-                    <Field
-                      isRequired
-                      name="email"
-                      type="email"
-                      label="Email address"
-                      placeholder="juandelacruz@gmail.com"
-                      autoFocus
-                    />
-                    <Field
-                      isRequired
-                      name="mobileNum"
-                      label="Mobile number"
-                      placeholder="09XXXXXXXXX"
-                    />
-                    <ButtonGroup>
-                      <PrevButton variant="ghost" />
+                    {/* @ts-ignore */}
+                    <FormLayout templateColumns={[[1], null, "auto 25%"]}>
+                      <Field
+                        isRequired
+                        style={{ textTransform: "uppercase" }}
+                        onChange={(e: any) => {
+                          e.target.value = e.target.value.toUpperCase();
+                        }}
+                        name="email"
+                        type="email"
+                        label="Email address"
+                        placeholder="juandelacruz@gmail.com"
+                      />
+                      <Field
+                        isRequired
+                        name="mobileNum"
+                        label="Mobile #"
+                        placeholder="09XXXXXXXXX"
+                      />
+                    </FormLayout>
+                    <ButtonGroup size="md">
                       <NextButton />
                     </ButtonGroup>
                   </FormLayout>
                 </FormStep>
+
                 <FormStep name="address" title="Address">
                   <FormLayout>
                     <FormLayout columns={[1, null, 3]}>
                       <Field
+                        autoFocus
+                        style={{ textTransform: "uppercase" }}
+                        onChange={(e: any) => {
+                          e.target.value = e.target.value.toUpperCase();
+                        }}
                         isRequired
                         name="houseNumStreetName"
                         label="House # and street name"
-                        autoFocus
                       />
                       <Field
+                        style={{ textTransform: "uppercase" }}
                         isRequired
                         name="region"
                         type={select}
                         closeOnSelect
                         closeOnBlur
-                        placeholder="Select region"
+                        placeholder="SELECT REGION"
                         options={listRegions.map(
                           (region: {
                             region_code: string;
                             region_name: string;
                           }) => ({
                             value: region.region_code,
-                            label: region.region_name,
+                            label: region.region_name.toUpperCase(),
                           })
                         )}
-                        defaultValue={selectedRegion}
+                        value={selectedRegion}
                         onChange={
                           isNative
                             ? (event: Event) => {
-                                handleRegionChangeNative(event);
+                                // @ts-ignore
+                                handleRegionChange(event.target.value);
                               }
                             : // @ts-ignore
-                              (value: Value) => {
+                              (value: any) => {
                                 handleRegionChange(value);
                               }
                         }
@@ -303,20 +406,21 @@ export default function ApplicationForm() {
                         type={select}
                         closeOnSelect
                         closeOnBlur
-                        placeholder="Select province"
+                        placeholder="SELECT PROVINCE"
                         options={listProvinces.map(
                           (province: {
                             province_code: string;
                             province_name: string;
                           }) => ({
                             value: province.province_code,
-                            label: province.province_name,
+                            label: province.province_name.toUpperCase(),
                           })
                         )}
                         onChange={
                           isNative
                             ? (event: Event) => {
-                                handleProvinceChangeNative(event);
+                                // @ts-ignore
+                                handleProvinceChange(event.target.value);
                               }
                             : // @ts-ignore
                               (value: Value) => {
@@ -332,21 +436,24 @@ export default function ApplicationForm() {
                     <FormLayout templateColumns={[[1], null, "auto 55%"]}>
                       <Field
                         isRequired
-                        name="municipality"
+                        name="cityMunicipality"
                         type={select}
                         closeOnSelect
                         closeOnBlur
-                        placeholder="Select city or municipality"
+                        placeholder="SELECT CITY/MUNICIPALITY"
                         options={listCitiesMunicipalities.map(
                           (city: { city_code: string; city_name: string }) => ({
                             value: city.city_code,
-                            label: city.city_name,
+                            label: city.city_name.toUpperCase(),
                           })
                         )}
                         onChange={
                           isNative
                             ? (event: Event) => {
-                                handleCityMunicipalityChangeNative(event);
+                                handleCityMunicipalityChange(
+                                  // @ts-ignore
+                                  event.target.value
+                                );
                               }
                             : // @ts-ignore
                               (value: Value) => {
@@ -366,20 +473,21 @@ export default function ApplicationForm() {
                           type={select}
                           closeOnSelect
                           closeOnBlur
-                          placeholder="Select barangay"
+                          placeholder="SELECT BARANGAY"
                           options={listBarangays.map(
                             (barangay: {
                               brgy_code: string;
                               brgy_name: string;
                             }) => ({
                               value: barangay.brgy_code,
-                              label: barangay.brgy_name,
+                              label: barangay.brgy_name.toUpperCase(),
                             })
                           )}
                           onChange={
                             isNative
                               ? (event: Event) => {
-                                  handleBarangayChangeNative(event);
+                                  // @ts-ignore
+                                  handleBarangayChange(event.target.value);
                                 }
                               : // @ts-ignore
                                 (value: Value) => {
@@ -390,10 +498,15 @@ export default function ApplicationForm() {
                           label="Barangay"
                           isDisabled={!selectedCityMunicipality}
                         />
-                        <Field isRequired name="zipCode" label="Zip code" />
+                        <Field
+                          isRequired
+                          name="zipCode"
+                          label="Zip code"
+                          pattern="[0-9]*(.[0-9]+)?"
+                        />
                       </FormLayout>
                     </FormLayout>
-                    <ButtonGroup>
+                    <ButtonGroup size="md">
                       <PrevButton variant="ghost" />
                       <NextButton />
                     </ButtonGroup>
@@ -405,11 +518,19 @@ export default function ApplicationForm() {
                       <Field
                         autoFocus
                         isRequired
+                        style={{ textTransform: "uppercase" }}
+                        onChange={(e: any) => {
+                          e.target.value = e.target.value.toUpperCase();
+                        }}
                         name="motherName"
                         label="Mother's name"
                       />
                       <Field
                         isRequired
+                        style={{ textTransform: "uppercase" }}
+                        onChange={(e: any) => {
+                          e.target.value = e.target.value.toUpperCase();
+                        }}
                         name="motherOccupation"
                         label="Mother's occupation"
                       />
@@ -417,13 +538,26 @@ export default function ApplicationForm() {
                     <FormLayout columns={[1, null, 2]}>
                       <Field
                         isRequired
+                        value={selectedMotherAnnualIncome}
                         name="motherAnnualIncome"
                         label="Mother's annual income"
-                        placeholder="Select income range"
+                        placeholder="SELECT INCOME RANGE"
                         type={select}
                         options={annualIncomeOptions.map((value) => ({
                           value,
                         }))}
+                        onChange={
+                          isNative
+                            ? (event: Event) => {
+                                setSelectedMotherAnnualIncome(
+                                  // @ts-ignore
+                                  event.target.value
+                                );
+                              }
+                            : (value: any) => {
+                                setSelectedMotherAnnualIncome(value);
+                              }
+                        }
                       />
                       <Field
                         isRequired
@@ -436,11 +570,19 @@ export default function ApplicationForm() {
                       <Field
                         isRequired
                         name="fatherName"
+                        style={{ textTransform: "uppercase" }}
+                        onChange={(e: any) => {
+                          e.target.value = e.target.value.toUpperCase();
+                        }}
                         label="Father's name"
                       />
                       <Field
                         isRequired
                         name="fatherOccupation"
+                        style={{ textTransform: "uppercase" }}
+                        onChange={(e: any) => {
+                          e.target.value = e.target.value.toUpperCase();
+                        }}
                         label="Father's occupation"
                       />
                     </FormLayout>
@@ -449,7 +591,7 @@ export default function ApplicationForm() {
                         isRequired
                         name="fatherAnnualIncome"
                         label="Father's annual income"
-                        placeholder="Select income range"
+                        placeholder="SELECT INCOME RANGE"
                         type={select}
                         options={annualIncomeOptions.map((value) => ({
                           value,
@@ -466,6 +608,10 @@ export default function ApplicationForm() {
                       <Field
                         isRequired
                         name="guardianName"
+                        style={{ textTransform: "uppercase" }}
+                        onChange={(e: any) => {
+                          e.target.value = e.target.value.toUpperCase();
+                        }}
                         label="Guardian's name"
                       />
                       <FormLayout
@@ -477,24 +623,24 @@ export default function ApplicationForm() {
                           label="Relationship to applicant"
                           type={select}
                           options={[
-                            { value: "Mother" },
-                            { value: "Father" },
-                            { value: "Sibling" },
-                            { value: "Relative" },
-                            { value: "Other" },
+                            { value: "MOTHER" },
+                            { value: "FATHER" },
+                            { value: "SIBLING" },
+                            { value: "RELATIVE" },
+                            { value: "OTHER" },
                           ]}
-                          placeholder="Select relationship"
+                          placeholder="SELECT RELATIONSHIP"
                         />
                         <Field
                           isRequired
                           name="guardianMobileNum"
                           placeholder="09XXXXXXXXX"
-                          label="Mobile number"
+                          label="Mobile #"
                         />
                       </FormLayout>
                     </FormLayout>
 
-                    <ButtonGroup>
+                    <ButtonGroup size="md">
                       <PrevButton variant="ghost" />
                       <NextButton />
                     </ButtonGroup>
@@ -506,20 +652,110 @@ export default function ApplicationForm() {
                       <Field
                         autoFocus
                         isRequired
+                        type={select}
+                        closeOnSelect
+                        closeOnBlur
+                        placeholder="SELECT TRACK"
+                        options={allTracks}
+                        value={selectedTrack}
+                        onChange={
+                          isNative
+                            ? (event: Event) => {
+                                // @ts-ignore
+                                handleTrackChange(event.target.value);
+                              }
+                            : // @ts-ignore
+                              (value: Value) => {
+                                handleTrackChange(value);
+                              }
+                        }
                         name="trackName"
                         label="Track name"
                       />
-                      <Field isRequired name="strandName" label="Strand name" />
+                      {selectedTrack === "OTHER: SPECIFY" ? (
+                        <Field
+                          autoFocus
+                          isRequired={!isStrandRequired}
+                          style={{ textTransform: "uppercase" }}
+                          onChange={(e: any) => {
+                            e.target.value = e.target.value.toUpperCase();
+                            setSelectedStrand(
+                              (prev) => (prev = "NOT APPLICABLE")
+                            );
+                          }}
+                          placeholder="SPECIFY TRACK AND STRAND"
+                          name="specifiedTrackStrand"
+                          label="Other track and strand"
+                        />
+                      ) : selectedTrack === "ARTS AND DESIGN TRACK" ||
+                        selectedTrack === "SPORTS TRACK" ? (
+                        <Field
+                          autoFocus
+                          isRequired={!isStrandRequired}
+                          name="strandName"
+                          label="Strand name"
+                          value="NOT APPLICABLE"
+                          isReadOnly
+                        />
+                      ) : (
+                        <Field
+                          autoFocus
+                          isRequired={isStrandRequired}
+                          type={select}
+                          closeOnSelect
+                          closeOnBlur
+                          placeholder="SELECT STRAND"
+                          options={filteredStrands}
+                          value={selectedStrand}
+                          onChange={
+                            isNative
+                              ? (event: Event) => {
+                                  // @ts-ignore
+                                  handleStrandChange(event.target.value);
+                                }
+                              : // @ts-ignore
+                                (value: Value) => {
+                                  handleStrandChange(value);
+                                }
+                          }
+                          isDisabled={
+                            !selectedTrack ||
+                            !filteredStrands.length ||
+                            !isStrandRequired
+                          }
+                          name="strandName"
+                          label="Strand name"
+                        />
+                      )}
                     </FormLayout>
                     <FormLayout columns={[1, null, 2]}>
                       <Field
                         isRequired
                         name="shsSchoolYearGraduated"
                         label="School year graduated"
+                        type={select}
+                        options={yearOptions}
+                        placeholder="SELECT SCHOOL YEAR"
+                        onChange={
+                          isNative
+                            ? (event: Event) => {
+                                setSelectedSchoolYearGraduated(
+                                  // @ts-ignore
+                                  event.target.value
+                                );
+                              }
+                            : (value: any) => {
+                                setSelectedSchoolYearGraduated(value);
+                              }
+                        }
+                        value={selectedSchoolYearGraduated}
+                        closeOnSelect
+                        closeOnBlur
                       />
                       <Field
                         isRequired
                         placeholder="85.00"
+                        pattern="[0-9]*(.[0-9]+)?"
                         name="shsGwa"
                         label="General Weighted Average"
                       />
@@ -527,52 +763,29 @@ export default function ApplicationForm() {
                     <FormLayout columns={[1, null, 3]}>
                       <Field
                         isRequired
+                        style={{ textTransform: "uppercase" }}
+                        onChange={(e: any) => {
+                          e.target.value = e.target.value.toUpperCase();
+                        }}
                         name="shsSchoolName"
                         label="Senior High School name"
                       />
                       <Field
                         isRequired
+                        style={{ textTransform: "uppercase" }}
+                        onChange={(e: any) => {
+                          e.target.value = e.target.value.toUpperCase();
+                        }}
                         name="shsSchoolAddress"
-                        label="School address"
+                        label="Senior High School address"
                       />
                       <Field
                         isRequired
                         name="shsSchoolContactNum"
-                        label="School contact number"
+                        label="Senior High School contact number"
                       />
                     </FormLayout>
 
-                    <ButtonGroup>
-                      <PrevButton variant="ghost" />
-                      <NextButton />
-                    </ButtonGroup>
-                  </FormLayout>
-                </FormStep>
-                <FormStep name="confirm" title="Confirm">
-                  <FormLayout>
-                    <Text>Please confirm that all information is correct.</Text>
-                    <PropertyList>
-                      <Property
-                        label="Last name"
-                        value={<FormValue name="lastName" />}
-                      />
-                      <Property
-                        label="First name"
-                        value={<FormValue name="firstName" />}
-                      />
-                      <Property
-                        label="Middle name"
-                        value={<FormValue name="middleName" />}
-                      />
-                      <Property
-                        label="Date of Birth"
-                        value={<FormValue name="dob" />}
-                      />
-                      <Property
-                        label="Birthplace"
-                        value={<FormValue name="birthPlace" />}
-                      />
-                    </PropertyList>
                     <ButtonGroup>
                       <PrevButton variant="ghost" />
                       <SubmitButton />

@@ -1,6 +1,6 @@
 import { LoginBackground } from "@/components/LoginBackground";
 
-export default function ApplicantPortalLayout({
+export default function AuthLayout({
   children,
 }: {
   children: React.ReactNode;

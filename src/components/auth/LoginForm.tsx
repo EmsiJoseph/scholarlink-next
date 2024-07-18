@@ -30,10 +30,14 @@ import { useState, useTransition } from "react";
 import parse from "html-react-parser";
 import Link from "next/link";
 import { Button, buttonVariants } from "../ui/button";
+import { Checkbox } from "../ui/checkbox";
+import { SubmitButton } from "@saas-ui/react";
+import BeatLoader from "react-spinners/BeatLoader";
 
 export function LoginForm() {
   const [showTwoFactor, setShowTwoFactor] = useState(false);
   const [email, setEmail] = useState("");
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const searchParams = useSearchParams();
   const urlError =
     searchParams.get("error") === "OAuthAccountNotLinked"
@@ -44,6 +48,8 @@ export function LoginForm() {
 
   const [isPending, startTransition] = useTransition();
 
+  const [isLoading, setIsLoading] = useState(false);
+
   const form = useForm<z.infer<typeof LoginSchema>>({
     resolver: zodResolver(LoginSchema),
     defaultValues: {
@@ -53,9 +59,14 @@ export function LoginForm() {
   });
 
   function onSubmit(values: z.infer<typeof LoginSchema>) {
+    setIsLoading(true);
     setError("");
     setSuccess("");
-
+    if (!termsAccepted) {
+      setError("You must accept the terms and conditions to proceed.");
+      return;
+    }
+    // TODO: Add animations to the login form
     startTransition(() => {
       login(values)
         .then((data) => {
@@ -91,7 +102,7 @@ export function LoginForm() {
           : "Login to your account"
       }
       backButtonLabel="Don't have an account?"
-      backButtonHref="/auth/register"
+      backButtonHref="/auth/registration"
       showSocial={true}
     >
       <Form {...form}>
@@ -161,26 +172,54 @@ export function LoginForm() {
                       <FormControl>
                         <Input {...field} type="password" />
                       </FormControl>
-                      <Link
-                        href="/auth/reset"
-                        className={`${buttonVariants({
-                          variant: "link",
-                        })} px-1 text-normal underline`}
-                      >
-                        Forgot password?
-                      </Link>
+                      <div className="flex justify-end w-full">
+                        <Button
+                          size="sm"
+                          variant="link"
+                          asChild
+                          className="text-sm underline px-0 font-normal justify-end"
+                        >
+                          <Link href="/auth/reset">Forgot password?</Link>
+                        </Button>
+                      </div>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+                <div className="items-top flex space-x-2">
+                  <Checkbox
+                    name="terms"
+                    onCheckedChange={(checked) =>
+                      setTermsAccepted(checked as boolean)
+                    }
+                  />
+                  <div className="grid gap-1.5 leading-none">
+                    <label
+                      htmlFor="terms"
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      Accept terms and conditions
+                    </label>
+                    {/* //TODO: Add a link to the terms and conditions */}
+                    <p className="text-sm text-muted-foreground">
+                      You agree to our Terms of Service and Privacy Policy.
+                    </p>
+                  </div>
+                </div>
               </>
             )}
           </div>
           <FormError message={error || urlError} />
           <FormSuccess message={success} />
-          <Button disabled={isPending} className="w-full" type="submit">
+          <SubmitButton
+            isLoading={isLoading}
+            spinner={<BeatLoader size={8} color="white" />}
+            disabled={isPending}
+            className="w-full"
+            size="md"
+          >
             {showTwoFactor ? "Verify" : "Login"}
-          </Button>
+          </SubmitButton>
         </form>
       </Form>
     </CardWrapper>

@@ -5,14 +5,16 @@ import { buttonVariants } from "./ui/button";
 
 interface BackButtonProps {
   label: string;
-  href: string;
+  href?: string;
+  onClick?: () => void;
 }
 
-export function BackButton({ label, href }: BackButtonProps) {
+export function BackButton({ label, href, onClick }: BackButtonProps) {
   return (
     <div className="text-sm">
       <Link
-        href={href}
+        onClick={onClick}
+        href={href || "/"}
         className={`${buttonVariants({
           variant: "link",
         })} px-1 text-normal underline`}

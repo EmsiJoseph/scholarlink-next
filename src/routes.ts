@@ -13,7 +13,7 @@ export const publicRoutes = ["/", "/auth/new-verification"];
 
 export const authRoutes = [
   "/auth/login",
-  "/auth/register",
+  "/auth/registration",
   "/auth/error",
   "/auth/reset",
   "/auth/new-password",

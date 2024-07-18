@@ -1,3 +1,4 @@
+import { useBreakpointValue } from "@chakra-ui/react";
 import { CardDescription, CardHeader, CardTitle } from "./ui/card";
 
 interface HeaderProps {

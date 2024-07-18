@@ -1,8 +1,45 @@
 import * as z from "zod";
 
+const getMinAgeDate = (age: number) => {
+  const today = new Date();
+  return new Date(today.getFullYear() - age, today.getMonth(), today.getDate());
+};
+
+export const tracks = {
+  "ACADEMIC TRACK": [
+    {
+      value: "ACCOUNTANCY, BUSINESS, AND MANAGEMENT (ABM)",
+    },
+    {
+      value: "SCIENCE, TECHNOLOGY, ENGINEERING, AND MATHEMATICS (STEM)",
+    },
+    {
+      value: "HUMANITIES AND SOCIAL SCIENCES (HUMSS)",
+    },
+    {
+      value: "GENERAL ACADEMIC STRAND (GAS)",
+    },
+  ],
+  "TECHNICAL-VOCATIONAL LIVELIHOOD (TVL) TRACK": [
+    { value: "AGRI-FISHERY ARTS" },
+    { value: "HOME ECONOMICS" },
+    { value: "INDUSTRIAL ARTS" },
+    {
+      value: "INFORMATION AND COMMUNICATION TECHNOLOGY (ICT)",
+    },
+  ],
+  "SPORTS TRACK": [],
+  "ARTS AND DESIGN TRACK": [],
+  "OTHER: SPECIFY": [],
+};
+
+export const allTracks = Object.keys(tracks).map((track) => ({
+  value: track,
+}));
+
 export const annualIncomeOptions = [
-  "Not applicable",
-  "Less than ₱50,000",
+  "NOT APPLICABLE",
+  "LESS THAN ₱50,000",
   "₱50,000 - ₱99,999",
   "₱100,000 - ₱149,999",
   "₱150,000 - ₱199,999",
@@ -12,7 +49,7 @@ export const annualIncomeOptions = [
   "₱350,000 - ₱399,999",
   "₱400,000 - ₱449,999",
   "₱450,000 - ₱499,999",
-  "₱500,000 and above",
+  "₱500,000 AND ABOVE",
 ];
 
 export const mobileNumberRegex = /^09\d{9}$/;
@@ -23,13 +60,12 @@ export const ApplicationFormSchema = [
       lastName: z.string().min(1, "Last name is required"),
       firstName: z.string().min(1, "First name is required"),
       middleName: z.string().optional(),
+      sex: z.enum(["MALE", "FEMALE", "OTHER"]),
+      civilStatus: z.enum(["SINGLE", "MARRIED", "WIDOWED", "SEPARATED"]),
+      nationality: z.string().min(1, "Nationality is required"),
+      ethnicity: z.string().optional(),
       dob: z.string().min(1, "Date of Birth is required"),
       birthPlace: z.string().min(1, "Birthplace is required"),
-      gender: z.enum(["Male", "Female", "Other"]),
-    }),
-  },
-  {
-    contact: z.object({
       email: z.string().email("Invalid email address"),
       mobileNum: z
         .string()
@@ -95,6 +131,7 @@ export const ApplicationFormSchema = [
     education: z.object({
       trackName: z.string().min(1, "Track name is required"),
       strandName: z.string().min(1, "Strand name is required"),
+      specifiedTrackStrand: z.string().optional(),
       shsSchoolYearGraduated: z
         .string()
         .min(1, "School year graduated is required"),
@@ -148,6 +185,57 @@ export const LoginSchema = z.object({
   code: z.optional(z.string()),
 });
 
+export const RegistrationSchema = z.object({
+  initial: z.object({
+    firstName: z.string().min(1, { message: "First name is required" }),
+    lastName: z.string().min(1, { message: "Last name is required" }),
+    middleName: z.string().optional(),
+  }),
+  account: z
+    .object({
+      email: z.string().email({
+        message: "Email is required",
+      }),
+      password: z
+        .string()
+        .min(8, { message: "Password must be at least 8 characters long" })
+        .regex(/[a-z]/, {
+          message: "Password must contain at least one lowercase letter",
+        })
+        .regex(/[A-Z]/, {
+          message: "Password must contain at least one uppercase letter",
+        })
+        .regex(/[0-9]/, {
+          message: "Password must contain at least one number",
+        })
+        .regex(/[^a-zA-Z0-9]/, {
+          message: "Password must contain at least one special character",
+        }),
+      confirmPassword: z
+        .string()
+        .min(1, { message: "Confirm password is required" }),
+    })
+    .refine((data) => data.password === data.confirmPassword, {
+      message: "Passwords do not match",
+      path: ["confirmPassword"],
+    }),
+  dob: z
+    .object({
+      day: z.string().min(1, { message: "Select a day" }),
+      month: z.string().min(1, { message: "Select a month" }),
+      year: z.string().min(1, { message: "Select a year" }),
+    })
+    .refine(
+      (data) => {
+        const { day, month, year } = data;
+        const dob = new Date(`${year}-${month}-${day}`);
+        const minAgeDate = getMinAgeDate(1);
+        return dob <= minAgeDate;
+      },
+      { message: "You must be at least 16 years old" }
+    ),
+});
+
 export const RegisterSchema = z
   .object({
     email: z
@@ -174,6 +262,12 @@ export const RegisterSchema = z
     confirmPassword: z
       .string()
       .min(1, { message: "Confirm password is required" }),
+    firstName: z.string().min(1, { message: "First name is required" }),
+    lastName: z.string().min(1, { message: "Last name is required" }),
+    middleName: z.string().optional(),
+    day: z.string().min(1, { message: "Select a day" }),
+    month: z.string().min(1, { message: "Select a month" }),
+    year: z.string().min(1, { message: "Select a year" }),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords do not match",

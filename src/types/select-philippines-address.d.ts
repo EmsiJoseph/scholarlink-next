@@ -36,4 +36,5 @@ declare module "select-philippines-address" {
   export function provinces(regionCode: string): Promise<Province[]>;
   export function cities(provinceCode: string): Promise<City[]>;
   export function barangays(cityCode: string): Promise<Barangay[]>;
+  export function regionByCode(regionCode: string): Promise<Region>;
 }
